@@ -1,0 +1,63 @@
+<svg viewBox="0 0 1280 640" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Dark slate background -->
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#1e1b4b"/>
+    </linearGradient>
+    
+    <!-- Indigo glow accents -->
+    <linearGradient id="glow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#818cf8"/>
+      <stop offset="50%" stop-color="#4f46e5"/>
+      <stop offset="100%" stop-color="#312e81"/>
+    </linearGradient>
+
+    <!-- Glassmorphic panel -->
+    <linearGradient id="glass" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.02"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1280" height="640" fill="url(#bg)"/>
+
+  <!-- Background decorative glowing orbs (using simple radial styling via SVG) -->
+  <ellipse cx="250" cy="150" rx="300" ry="300" fill="#4f46e5" opacity="0.3" filter="blur(80px)" />
+  <ellipse cx="1100" cy="450" rx="400" ry="400" fill="#818cf8" opacity="0.15" filter="blur(120px)" />
+
+  <!-- Floating UI panels representing screenshots -->
+  <g transform="translate(700, 80) rotate(6)">
+    <!-- Back panel -->
+    <rect width="500" height="300" rx="24" fill="url(#glass)" stroke="rgba(255,255,255,0.1)" stroke-width="2"/>
+    <!-- Mock UI header -->
+    <rect x="24" y="24" width="80" height="12" rx="6" fill="rgba(255,255,255,0.2)"/>
+    <circle cx="120" cy="30" r="6" fill="rgba(255,255,255,0.2)" />
+    <circle cx="140" cy="30" r="6" fill="rgba(255,255,255,0.2)" />
+    <!-- Mock image body -->
+    <rect x="24" y="56" width="452" height="220" rx="16" fill="rgba(255,255,255,0.05)"/>
+  </g>
+  
+  <g transform="translate(620, 220) rotate(-3)">
+    <!-- Front panel -->
+    <rect width="540" height="340" rx="32" fill="url(#glass)" stroke="rgba(255,255,255,0.25)" stroke-width="3"/>
+    
+    <!-- Mock crop UI boundary marks -->
+    <path d="M 60 120 V 60 H 120" stroke="rgba(255,255,255,0.9)" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M 480 280 V 280 H 420" stroke="rgba(255,255,255,0.9)" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    
+    <!-- Mock captured image inside -->
+    <rect x="96" y="96" width="348" height="148" rx="20" fill="url(#glow)"/>
+    <rect x="120" y="120" width="300" height="20" rx="10" fill="rgba(255,255,255,0.3)"/>
+    <rect x="120" y="160" width="200" height="16" rx="8" fill="rgba(255,255,255,0.2)"/>
+  </g>
+
+  <!-- Left typography / Brand -->
+  <g transform="translate(120, 300)">
+    <path d="M 0 100 V 0 H 100" stroke="url(#glass)" stroke-width="40" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Real text -->
+    <text x="0" y="20" font-family="Arial, Helvetica, sans-serif" font-size="88" font-weight="900" fill="#ffffff" letter-spacing="-3">Elysium</text>
+    <text x="5" y="80" font-family="Arial, Helvetica, sans-serif" font-size="34" font-weight="700" fill="#818cf8" letter-spacing="6">SCREENSHOT</text>
+    <text x="6" y="140" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="400" fill="#cbd5e1">The premium, privacy-first capture tool.</text>
+  </g>
+</svg>
