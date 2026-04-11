@@ -55,7 +55,7 @@ export default function SettingsApp() {
       <div className="max-w-2xl mx-auto px-6 py-10">
         {/* Header */}
         <div className="flex items-center gap-3 mb-8">
-          <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-lg font-bold">E</div>
+          <img src="/icons/icon-48.png" alt="Elysium Logo" className="w-10 h-10" />
           <div>
             <h1 className="text-xl font-semibold">Elysium Settings</h1>
             <p className="text-sm text-slate-400">Configure your screenshot workflow</p>
@@ -185,10 +185,10 @@ export default function SettingsApp() {
         {/* ─── About ─── */}
         <Section title="About" icon="ℹ">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-lg font-bold">E</div>
+            <img src="/icons/icon-48.png" alt="Elysium Logo" className="w-10 h-10" />
             <div>
               <div className="text-sm font-medium">Elysium Screenshot</div>
-              <div className="text-xs text-slate-500">v1.0.0</div>
+              <div className="text-xs text-slate-500">v{browser.runtime.getManifest().version}</div>
             </div>
           </div>
           <p className="mt-3 text-xs text-slate-500 leading-relaxed">
