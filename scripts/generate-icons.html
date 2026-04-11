@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head><title>Icon Generator</title></head>
+<body>
+<canvas id="c"></canvas>
+<script>
+// Generate extension icons at all required sizes
+const sizes = [16, 32, 48, 128];
+
+function drawIcon(size) {
+  const canvas = document.getElementById('c');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  const s = size;
+
+  // Background - rounded square with gradient
+  const radius = s * 0.18;
+  ctx.beginPath();
+  ctx.moveTo(radius, 0);
+  ctx.lineTo(s - radius, 0);
+  ctx.quadraticCurveTo(s, 0, s, radius);
+  ctx.lineTo(s, s - radius);
+  ctx.quadraticCurveTo(s, s, s - radius, s);
+  ctx.lineTo(radius, s);
+  ctx.quadraticCurveTo(0, s, 0, s - radius);
+  ctx.lineTo(0, radius);
+  ctx.quadraticCurveTo(0, 0, radius, 0);
+  ctx.closePath();
+
+  const grad = ctx.createLinearGradient(0, 0, s, s);
+  grad.addColorStop(0, '#4f46e5');
+  grad.addColorStop(1, '#7c3aed');
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // "S" letter
+  ctx.fillStyle = '#ffffff';
+  ctx.font = `bold ${s * 0.55}px system-ui, -apple-system, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('S', s / 2, s / 2 + s * 0.02);
+
+  // Small camera icon in bottom-right
+  if (size >= 32) {
+    const iconSize = s * 0.22;
+    const ix = s * 0.75;
+    const iy = s * 0.75;
+    ctx.fillStyle = '#fbbf24';
+    ctx.beginPath();
+    ctx.arc(ix, iy, iconSize / 2, 0, Math.PI * 2);
+    ctx.fill();
+    // Lens
+    ctx.fillStyle = '#4f46e5';
+    ctx.beginPath();
+    ctx.arc(ix, iy, iconSize / 4, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  return canvas.toDataURL('image/png');
+}
+
+sizes.forEach(size => {
+  const dataUrl = drawIcon(size);
+  const link = document.createElement('a');
+  link.download = `icon-${size}.png`;
+  link.href = dataUrl;
+  link.click();
+});
+
+document.body.innerHTML = '<h1>Icons generated! Check your downloads folder.</h1>';
+</script>
+</body>
+</html>
