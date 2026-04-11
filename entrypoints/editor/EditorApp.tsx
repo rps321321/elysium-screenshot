@@ -13,6 +13,17 @@ export default function EditorApp() {
 
   const [copiedToast, setCopiedToast] = React.useState(false);
   const [loadError, setLoadError] = React.useState('');
+  const blobUrlRef = React.useRef<string | null>(null);
+
+  // Revoke the Object URL when the editor unmounts to free RAM
+  useEffect(() => {
+    return () => {
+      if (blobUrlRef.current) {
+        URL.revokeObjectURL(blobUrlRef.current);
+        blobUrlRef.current = null;
+      }
+    };
+  }, []);
 
   useEffect(() => {
     async function loadCapture() {
@@ -20,10 +31,14 @@ export default function EditorApp() {
       const capture = result.elysium_pending_capture as CaptureResult | undefined;
       if (capture) {
         if (capture.blobId) {
-          const { retrieveBlob } = await import('../../lib/storage/db');
+          const { retrieveBlob, deleteBlob } = await import('../../lib/storage/db');
           const blob = await retrieveBlob(capture.blobId);
           if (blob) {
-            capture.dataUrl = URL.createObjectURL(blob);
+            const blobUrl = URL.createObjectURL(blob);
+            blobUrlRef.current = blobUrl;
+            capture.dataUrl = blobUrl;
+            // Free IndexedDB disk space immediately — the blob is now in memory via the Object URL
+            await deleteBlob(capture.blobId);
           } else {
             setLoadError('Failed to load image from database. It might be corrupt.');
             await browser.storage.local.remove('elysium_pending_capture');
