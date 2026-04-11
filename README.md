@@ -66,8 +66,8 @@ See our full [Privacy Policy](PRIVACY_POLICY.md) for details.
 
 1. Go to the [Releases page](https://github.com/rps321321/elysium-screenshot/releases).
 2. Download the `.zip` for your browser:
-   - `elysium-screenshot-1.0.1-chrome.zip`
-   - `elysium-screenshot-1.0.1-firefox.zip`
+   - `elysium-screenshot-1.0.2-chrome.zip`
+   - `elysium-screenshot-1.0.2-firefox.zip`
 3. Extract the ZIP into a folder.
 
 **Chrome / Edge:**
