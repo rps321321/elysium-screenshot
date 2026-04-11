@@ -9,14 +9,17 @@ export async function captureVisibleTab(windowId: number, tabId?: number): Promi
     await sleep(50);
   }
 
-  const dataUrl = await browser.tabs.captureVisibleTab(windowId, {
-    format: 'png',
-    quality: 100,
-  });
-
-  // Restore scrollbar
-  if (tabId) {
-    try { await sendToTab(tabId, { type: 'SHOW_SCROLLBAR' }); } catch {}
+  let dataUrl: string;
+  try {
+    dataUrl = await browser.tabs.captureVisibleTab(windowId, {
+      format: 'png',
+      quality: 100,
+    });
+  } finally {
+    // Restore scrollbar
+    if (tabId) {
+      try { await sendToTab(tabId, { type: 'SHOW_SCROLLBAR' }); } catch {}
+    }
   }
 
   const dimensions = await getImageDimensions(dataUrl);

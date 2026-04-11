@@ -182,18 +182,21 @@ export default defineBackground(() => {
     try { await sendToTab(senderTab.id!, { type: 'HIDE_SCROLLBAR' }); } catch {}
     await sleep(100);
 
-    const screenshotUrl = await browser.tabs.captureVisibleTab(senderTab.windowId!, {
-      format: 'png', quality: 100,
-    });
-
-    try { await sendToTab(senderTab.id!, { type: 'SHOW_SCROLLBAR' }); } catch {}
+    let screenshotUrl: string;
+    try {
+      screenshotUrl = await browser.tabs.captureVisibleTab(senderTab.windowId!, {
+        format: 'png', quality: 100,
+      });
+    } finally {
+      try { await sendToTab(senderTab.id!, { type: 'SHOW_SCROLLBAR' }); } catch {}
+    }
 
     const blob = await (await fetch(screenshotUrl)).blob();
     const bitmap = await createImageBitmap(blob);
     const sx = Math.round(rect.x * dpr);
     const sy = Math.round(rect.y * dpr);
-    const sw = Math.min(Math.round(rect.width * dpr), bitmap.width - sx);
-    const sh = Math.min(Math.round(rect.height * dpr), bitmap.height - sy);
+    const sw = Math.max(1, Math.min(Math.round(rect.width * dpr), bitmap.width - sx));
+    const sh = Math.max(1, Math.min(Math.round(rect.height * dpr), bitmap.height - sy));
     const canvas = new OffscreenCanvas(sw, sh);
     canvas.getContext('2d')!.drawImage(bitmap, sx, sy, sw, sh, 0, 0, sw, sh);
     bitmap.close();

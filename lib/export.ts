@@ -79,7 +79,7 @@ export async function exportAsPdf(dataUrl: string, title: string, filename: stri
 
   while (yOffset < scaledHeight) {
     if (yOffset > 0) doc.addPage();
-    doc.addImage(dataUrl, 'PNG', margin, margin - yOffset, availableWidth, scaledHeight);
+    doc.addImage(dataUrl, 'PNG', margin, margin - yOffset, availableWidth, scaledHeight, 'screenshot', 'FAST');
     yOffset += pageContentHeight;
   }
 
