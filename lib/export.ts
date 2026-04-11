@@ -1,31 +1,48 @@
 import type { ExportFormat } from './types';
 import { blobToDataUrl } from './utils';
 
+/**
+ * Convert a source (Blob or data URL string) into a Blob.
+ * If it's already a Blob, returns it directly — zero copy.
+ */
+async function ensureBlob(source: Blob | string): Promise<Blob> {
+  if (source instanceof Blob) return source;
+  return (await fetch(source)).blob();
+}
+
 export async function downloadScreenshot(
-  dataUrl: string,
+  source: Blob | string,
   format: ExportFormat,
   quality: number,
   filename: string,
 ): Promise<void> {
-  const finalDataUrl = await convertFormat(dataUrl, format, quality);
+  const sourceBlob = await ensureBlob(source);
+  const finalBlob = await convertBlobFormat(sourceBlob, format, quality);
 
-  await browser.downloads.download({
-    url: finalDataUrl,
-    filename,
-    saveAs: true,
-  });
+  // Use a blob URL instead of a data URL — avoids massive base64 string allocation
+  const blobUrl = URL.createObjectURL(finalBlob);
+  try {
+    await browser.downloads.download({
+      url: blobUrl,
+      filename,
+      saveAs: true,
+    });
+  } finally {
+    // Revoke after a short delay to give the browser time to start the download
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+  }
 }
 
-export async function copyToClipboard(dataUrl: string): Promise<void> {
+export async function copyToClipboard(source: Blob | string): Promise<void> {
   // Guard: clipboard API is not available in service workers
   if (typeof navigator.clipboard?.write !== 'function') {
     throw new Error('Clipboard not available');
   }
 
-  const blob = await (await fetch(dataUrl)).blob();
-  const pngBlob = blob.type === 'image/png'
-    ? blob
-    : await convertToBlob(dataUrl, 'png', 1);
+  const sourceBlob = await ensureBlob(source);
+  const pngBlob = sourceBlob.type === 'image/png'
+    ? sourceBlob
+    : await convertBlobFormat(sourceBlob, 'png', 1);
 
   await navigator.clipboard.write([
     new ClipboardItem({ 'image/png': pngBlob }),
@@ -69,28 +86,29 @@ export async function exportAsPdf(dataUrl: string, title: string, filename: stri
   doc.save(filename);
 }
 
-async function convertFormat(
-  dataUrl: string,
-  format: ExportFormat,
-  quality: number,
-): Promise<string> {
-  if (format === 'pdf') return dataUrl;
-
-  const blob = await convertToBlob(dataUrl, format, quality);
-  return blobToDataUrl(blob);
-}
-
-async function convertToBlob(
-  dataUrl: string,
+/**
+ * Convert a Blob to a different image format via OffscreenCanvas.
+ * Runs entirely off the main thread's pixel pipeline.
+ */
+async function convertBlobFormat(
+  sourceBlob: Blob,
   format: ExportFormat,
   quality: number,
 ): Promise<Blob> {
+  if (format === 'pdf') return sourceBlob;
+
   const mimeType = format === 'png' ? 'image/png' : format === 'jpg' ? 'image/jpeg' : 'image/webp';
-  const blob = await (await fetch(dataUrl)).blob();
-  const bitmap = await createImageBitmap(blob);
+
+  // If source is already the target format with lossless quality, skip re-encoding
+  if (sourceBlob.type === mimeType && (format === 'png' || quality >= 1)) {
+    return sourceBlob;
+  }
+
+  const bitmap = await createImageBitmap(sourceBlob);
   const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
   const ctx = canvas.getContext('2d')!;
   ctx.drawImage(bitmap, 0, 0);
   bitmap.close();
   return canvas.convertToBlob({ type: mimeType, quality });
 }
+

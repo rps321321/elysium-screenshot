@@ -1,6 +1,33 @@
 import type { Annotation } from './types';
 
 /**
+ * Module-level scratch canvas reused across eraser preview frames.
+ * Eliminates per-frame DOM element allocations that cause GC spikes
+ * and frame drops during active eraser drag strokes.
+ */
+let _scratchCanvas: HTMLCanvasElement | null = null;
+let _scratchCtx: CanvasRenderingContext2D | null = null;
+
+function getScratchCanvas(width: number, height: number): { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D } {
+  if (!_scratchCanvas || !_scratchCtx) {
+    _scratchCanvas = document.createElement('canvas');
+    _scratchCtx = _scratchCanvas.getContext('2d')!;
+  }
+  // Resize only when dimensions change (resizing implicitly clears the canvas)
+  if (_scratchCanvas.width !== width || _scratchCanvas.height !== height) {
+    _scratchCanvas.width = width;
+    _scratchCanvas.height = height;
+  } else {
+    // Same size — just clear manually
+    _scratchCtx.clearRect(0, 0, width, height);
+  }
+  // Reset any leftover composite operations from the previous frame
+  _scratchCtx.globalCompositeOperation = 'source-over';
+  _scratchCtx.setTransform(1, 0, 0, 1, 0, 0);
+  return { canvas: _scratchCanvas, ctx: _scratchCtx };
+}
+
+/**
  * Shared annotation drawing logic used by both EditorCanvas (live preview)
  * and ExportDialog (final export). For tools that reference the original image
  * (blur, eraser), pass imageRef/imageWidth/imageHeight.
@@ -53,7 +80,7 @@ export function drawAnnotation(
           }
         }
 
-        // For preview strokes (still being drawn), always recompute — don't cache
+        // For preview strokes (still being drawn), reuse cached scratch canvas
         if (ann.id === 'preview') {
           const transform = ctx.getTransform();
           const scale = Math.max(Math.abs(transform.a), Math.abs(transform.d));
@@ -63,11 +90,9 @@ export function drawAnnotation(
           const bw = Math.ceil((maxX - minX) * scale + pad * 2);
           const bh = Math.ceil((maxY - minY) * scale + pad * 2);
 
-          const scratch = document.createElement('canvas');
-          scratch.width = Math.max(bw, 1);
-          scratch.height = Math.max(bh, 1);
-          const sctx = scratch.getContext('2d');
-          if (!sctx) break;
+          const sw = Math.max(bw, 1);
+          const sh = Math.max(bh, 1);
+          const { canvas: scratch, ctx: sctx } = getScratchCanvas(sw, sh);
 
           sctx.setTransform(transform.a, transform.b, transform.c, transform.d, transform.e - bx, transform.f - by);
           sctx.lineWidth = strokeW;

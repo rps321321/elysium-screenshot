@@ -62,8 +62,12 @@ export function EditorCanvas() {
   // Load image and auto-fit to container once loaded
   useEffect(() => {
     if (!imageDataUrl) return;
+    let fitFrameId: number | null = null;   // track the tryFit polling rAF
+    let cancelled = false;                  // guard against post-unmount work
+
     const img = new Image();
     img.onload = () => {
+      if (cancelled) return;                // component already unmounted
       imageRef.current = img;
       
       // Update store with intrinsic image dimensions.
@@ -78,17 +82,24 @@ export function EditorCanvas() {
       // The DOM container might not have its layout dimensions computed yet,
       // so we use a robust rAF loop waiting for non-zero dimensions.
       const tryFit = () => {
+        if (cancelled) return;              // stop polling if unmounted
         const container = containerRef.current;
         if (container && container.clientWidth > 0 && container.clientHeight > 0) {
           fitToContainer();
           requestRender();
         } else {
-          requestAnimationFrame(tryFit);
+          fitFrameId = requestAnimationFrame(tryFit);
         }
       };
-      requestAnimationFrame(tryFit);
+      fitFrameId = requestAnimationFrame(tryFit);
     };
     img.src = imageDataUrl;
+
+    // Cleanup: cancel any in-flight tryFit polling and prevent late onload work
+    return () => {
+      cancelled = true;
+      if (fitFrameId !== null) cancelAnimationFrame(fitFrameId);
+    };
   }, [imageDataUrl, fitToContainer]);
 
   // Handle container resize with ResizeObserver
@@ -100,12 +111,18 @@ export function EditorCanvas() {
       requestRender();
     });
     observer.observe(container);
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      // Cancel any pending render frame triggered by the last resize event
+      cancelAnimationFrame(rafRef.current);
+    };
   }, []);
 
   // Re-render when state changes
   useEffect(() => {
     requestRender();
+    // Cancel the pending frame on cleanup to avoid rendering on unmounted canvas
+    return () => cancelAnimationFrame(rafRef.current);
   }, [annotations, zoom, panOffset, cropRect, isCropping]);
 
   function requestRender() {

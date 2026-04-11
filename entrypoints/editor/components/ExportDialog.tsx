@@ -3,6 +3,7 @@ import { useEditorStore } from '../../../stores/editor';
 import { downloadScreenshot, copyToClipboard, exportAsPdf } from '../../../lib/export';
 import { getSettings, resolveFilename } from '../../../lib/settings';
 import { drawAnnotation } from '../../../lib/render';
+import { blobToDataUrl } from '../../../lib/utils';
 import type { ExportFormat } from '../../../lib/types';
 
 const FORMATS: { id: ExportFormat; label: string; description: string }[] = [
@@ -27,7 +28,12 @@ export function ExportDialog({ onClose }: ExportDialogProps) {
   const [isExporting, setIsExporting] = useState(false);
   const [status, setStatus] = useState('');
 
-  async function getRenderedDataUrl(): Promise<string> {
+  /**
+   * Renders the final annotated screenshot to a PNG Blob asynchronously.
+   * Uses canvas.toBlob() instead of the synchronous toDataURL() to avoid
+   * freezing the UI thread on large (16k×16k) composites.
+   */
+  async function getRenderedBlob(): Promise<Blob> {
     const finalWidth = cropRect ? cropRect.width : imageWidth;
     const finalHeight = cropRect ? cropRect.height : imageHeight;
 
@@ -63,14 +69,20 @@ export function ExportDialog({ onClose }: ExportDialogProps) {
       drawAnnotation(ctx, ann, img, imageWidth, imageHeight);
     }
 
-    return canvas.toDataURL('image/png');
+    // Async blob encoding — does NOT block the UI thread
+    return new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob(
+        (blob) => blob ? resolve(blob) : reject(new Error('Canvas toBlob failed')),
+        'image/png',
+      );
+    });
   }
 
   async function handleDownload() {
     setIsExporting(true);
     setStatus('Preparing export...');
     try {
-      const dataUrl = await getRenderedDataUrl();
+      const blob = await getRenderedBlob();
       const settings = await getSettings();
       const filename = resolveFilename(
         settings.filenamePattern,
@@ -78,9 +90,11 @@ export function ExportDialog({ onClose }: ExportDialogProps) {
         captureUrl,
       );
       if (exportFormat === 'pdf') {
+        // PDF export still needs a data URL for jsPDF addImage
+        const dataUrl = await blobToDataUrl(blob);
         await exportAsPdf(dataUrl, 'Elysium Screenshot', filename);
       } else {
-        await downloadScreenshot(dataUrl, exportFormat, exportQuality, filename);
+        await downloadScreenshot(blob, exportFormat, exportQuality, filename);
       }
       setStatus('Exported successfully!');
       setTimeout(onClose, 800);
@@ -94,8 +108,8 @@ export function ExportDialog({ onClose }: ExportDialogProps) {
     setIsExporting(true);
     setStatus('Copying to clipboard...');
     try {
-      const dataUrl = await getRenderedDataUrl();
-      await copyToClipboard(dataUrl);
+      const blob = await getRenderedBlob();
+      await copyToClipboard(blob);
       setStatus('Copied to clipboard!');
       setTimeout(onClose, 800);
     } catch (err) {
