@@ -40,6 +40,13 @@ async function generateIcons() {
     .png()
     .toFile(path.join(BRANDING_DIR, 'banner.png'));
   console.log('Generated banner.png');
+
+  // Generate the GitHub Logo Master
+  await sharp(svgBuffer)
+    .resize(512, 512)
+    .png()
+    .toFile(path.join(BRANDING_DIR, 'icon_master.png'));
+  console.log('Generated icon_master.png');
 }
 
 generateIcons().catch(console.error);
