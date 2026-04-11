@@ -1,6 +1,6 @@
 # Elysium Screenshot
 
-![Elysium Screenshot Banner](https://via.placeholder.com/1200x400.png?text=Elysium+Screenshot)
+![Elysium Screenshot Banner](public/branding/banner.png)
 
 Elysium Screenshot is a premium, high-performance browser extension built to streamline capturing, annotating, and exporting webpages without sacrificing privacy. Unlike typical screenshot tools, Elysium executes zero cloud processing, running completely securely within your local browser environment.
 
