@@ -1,0 +1,31 @@
+<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#818cf8"/>
+      <stop offset="50%" stop-color="#4f46e5"/>
+      <stop offset="100%" stop-color="#312e81"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.2"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Rounded App Background -->
+  <rect x="32" y="32" width="448" height="448" rx="100" fill="url(#bg)"/>
+  
+  <!-- Inner Rim -->
+  <rect x="36" y="36" width="440" height="440" rx="96" stroke="#ffffff" stroke-opacity="0.25" stroke-width="6"/>
+
+  <!-- Top Left Crop -->
+  <path d="M 160 260 V 160 H 260" stroke="url(#glass)" stroke-width="40" stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <!-- Bottom Right Crop -->
+  <path d="M 352 252 V 352 H 252" stroke="url(#glass)" stroke-width="40" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Center Floating Element -->
+  <rect x="196" y="196" width="120" height="120" rx="32" fill="url(#glass)"/>
+  
+  <!-- Focus Dot -->
+  <circle cx="256" cy="256" r="20" fill="#ffffff"/>
+</svg>
