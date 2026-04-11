@@ -6,7 +6,7 @@ export default defineConfig({
   manifest: {
     name: 'Elysium Screenshot',
     description: 'The best free screenshot extension. Full-page capture, region select, element capture, annotation tools, blur, and more. 100% free, no paywalls, no account required.',
-    version: '1.0.1',
+    version: '1.0.2',
     permissions: ['activeTab', 'tabs', 'downloads', 'storage', 'contextMenus', 'scripting', 'notifications'],
     host_permissions: ['<all_urls>'],
     commands: {

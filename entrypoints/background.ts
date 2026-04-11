@@ -8,6 +8,20 @@ import type { CaptureResult, CaptureMode } from '../lib/types';
 export default defineBackground(() => {
   // ─── Helpers ───
 
+  /** Show a user-facing error notification when capture fails. */
+  async function showErrorNotification(message: string): Promise<void> {
+    try {
+      await browser.notifications.create({
+        type: 'basic',
+        iconUrl: browser.runtime.getURL('/icons/icon-128.png'),
+        title: 'Elysium Screenshot',
+        message,
+      });
+    } catch {
+      // Notification API itself failed — nothing we can do
+    }
+  }
+
   async function getPageTab(): Promise<chrome.tabs.Tab> {
     // Try current window first
     let tabs = await browser.tabs.query({ active: true, lastFocusedWindow: true });
@@ -218,6 +232,10 @@ export default defineBackground(() => {
       return { status: 'ok' };
     })().then(sendResponse).catch(err => {
       console.error('Elysium error:', err);
+      const msg = err instanceof Error ? err.message : String(err);
+      showErrorNotification(msg.includes('inject') || msg.includes('No page tab')
+        ? 'Cannot capture this page. Browser internal pages are restricted.'
+        : `Capture failed: ${msg}`);
       sendResponse({ error: String(err) });
     });
     return true;
@@ -263,7 +281,13 @@ export default defineBackground(() => {
           break;
         }
       }
-    } catch (err) { console.error('Elysium ctx error:', err); }
+    } catch (err) {
+      console.error('Elysium ctx error:', err);
+      const msg = err instanceof Error ? err.message : String(err);
+      showErrorNotification(msg.includes('inject')
+        ? 'Cannot capture this page. Browser internal pages are restricted.'
+        : `Capture failed: ${msg}`);
+    }
   });
 
   // ─── Keyboard Shortcuts ───
@@ -298,6 +322,12 @@ export default defineBackground(() => {
           break;
         }
       }
-    } catch (err) { console.error('Elysium cmd error:', err); }
+    } catch (err) {
+      console.error('Elysium cmd error:', err);
+      const msg = err instanceof Error ? err.message : String(err);
+      showErrorNotification(msg.includes('inject') || msg.includes('No page tab')
+        ? 'Cannot capture this page. Browser internal pages are restricted.'
+        : `Capture failed: ${msg}`);
+    }
   });
 });
