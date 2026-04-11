@@ -59,33 +59,35 @@ export async function captureFullPage(tabId: number, windowId: number): Promise<
 
   const MAX_STEPS = 50;
   let prevScrollY = -1;
-  for (let i = 0; i < steps && i < MAX_STEPS; i++) {
-    const requestedScrollY = i * viewportHeight;
-    const scrollResult = await sendToTab(tabId, { type: 'SCROLL_CAPTURE_STEP', scrollY: requestedScrollY }) as any;
-    const actualScrollY = scrollResult?.actualScrollY ?? requestedScrollY;
+  try {
+    for (let i = 0; i < steps && i < MAX_STEPS; i++) {
+      const requestedScrollY = i * viewportHeight;
+      const scrollResult = await sendToTab(tabId, { type: 'SCROLL_CAPTURE_STEP', scrollY: requestedScrollY }) as any;
+      const actualScrollY = scrollResult?.actualScrollY ?? requestedScrollY;
 
-    // Skip duplicate captures BEFORE capturing (scroll clamped to same position)
-    if (actualScrollY === prevScrollY) break;
-    prevScrollY = actualScrollY;
+      // Skip duplicate captures BEFORE capturing (scroll clamped to same position)
+      if (actualScrollY === prevScrollY) break;
+      prevScrollY = actualScrollY;
 
-    await sleep(500);
+      await sleep(500);
 
-    let dataUrl: string;
-    try {
-      dataUrl = await browser.tabs.captureVisibleTab(windowId, { format: 'png' });
-    } catch {
-      await sleep(700);
-      dataUrl = await browser.tabs.captureVisibleTab(windowId, { format: 'png' });
+      let dataUrl: string;
+      try {
+        dataUrl = await browser.tabs.captureVisibleTab(windowId, { format: 'png' });
+      } catch {
+        await sleep(700);
+        dataUrl = await browser.tabs.captureVisibleTab(windowId, { format: 'png' });
+      }
+
+      captures.push({ dataUrl, scrollY: actualScrollY });
+
+      if (i < steps - 1) await sleep(500);
     }
-
-    captures.push({ dataUrl, scrollY: actualScrollY });
-
-    if (i < steps - 1) await sleep(500);
+  } finally {
+    // ALWAYS restore scrollbar + scroll position, even if capture failed mid-loop
+    try { await sendToTab(tabId, { type: 'SHOW_SCROLLBAR' }); } catch {}
+    try { await sendToTab(tabId, { type: 'SCROLL_CAPTURE_STEP', scrollY: 0 }); } catch {}
   }
-
-  // Restore scrollbar and scroll position
-  try { await sendToTab(tabId, { type: 'SHOW_SCROLLBAR' }); } catch {}
-  await sendToTab(tabId, { type: 'SCROLL_CAPTURE_STEP', scrollY: 0 });
 
   // Get actual pixel dimensions from captured images
   const firstImg = await getImageDimensions(captures[0].dataUrl);

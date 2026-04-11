@@ -125,6 +125,21 @@ export function EditorCanvas() {
     return () => cancelAnimationFrame(rafRef.current);
   }, [annotations, zoom, panOffset, cropRect, isCropping]);
 
+  // Invalidate cached eraser masks when zoom/pan changes — they're rasterized
+  // at a specific transform and become visually corrupted at a different one.
+  useEffect(() => {
+    const { annotations: anns } = useEditorStore.getState();
+    let dirty = false;
+    for (const ann of anns) {
+      if (ann.tool === 'eraser' && ann.scratchMask) {
+        ann.scratchMask = undefined;
+        ann.scratchOffset = undefined;
+        dirty = true;
+      }
+    }
+    if (dirty) requestRender();
+  }, [zoom, panOffset]);
+
   function requestRender() {
     cancelAnimationFrame(rafRef.current);
     rafRef.current = requestAnimationFrame(renderCanvas);
@@ -324,7 +339,7 @@ export function EditorCanvas() {
       points: isFreehand ? currentPointsRef.current : undefined,
     };
 
-    drawAnnotation(ctx, previewAnnotation);
+    drawAnnotation(ctx, previewAnnotation, imageRef.current, imageWidth, imageHeight);
     ctx.restore();
   }
 
