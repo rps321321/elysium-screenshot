@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="public/branding/icon_master.png?v=2" alt="Elysium Logo" width="120" />
+  <img src="public/branding/icon_master_v2.png" alt="Elysium Logo" width="120" />
   <h1>Elysium Screenshot</h1>
   <p><b>The absolute premium, privacy-first capture tool for your browser.</b></p>
   
@@ -10,7 +10,7 @@
 
   <br />
   
-  <img src="public/branding/banner.png?v=2" alt="Elysium Banner">
+  <img src="public/branding/banner_v2.png" alt="Elysium Banner">
   
   <br />
 

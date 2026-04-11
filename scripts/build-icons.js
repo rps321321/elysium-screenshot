@@ -38,15 +38,15 @@ async function generateIcons() {
   await sharp(bannerBuffer)
     .resize(1280, 640)
     .png()
-    .toFile(path.join(BRANDING_DIR, 'banner.png'));
-  console.log('Generated banner.png');
+    .toFile(path.join(BRANDING_DIR, 'banner_v2.png'));
+  console.log('Generated banner_v2.png');
 
   // Generate the GitHub Logo Master
   await sharp(svgBuffer)
     .resize(512, 512)
     .png()
-    .toFile(path.join(BRANDING_DIR, 'icon_master.png'));
-  console.log('Generated icon_master.png');
+    .toFile(path.join(BRANDING_DIR, 'icon_master_v2.png'));
+  console.log('Generated icon_master_v2.png');
 }
 
 generateIcons().catch(console.error);
