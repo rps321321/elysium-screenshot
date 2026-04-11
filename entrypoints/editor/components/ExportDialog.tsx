@@ -65,6 +65,14 @@ export function ExportDialog({ onClose }: ExportDialogProps) {
     if (cropRect) {
       ctx.translate(-cropRect.x, -cropRect.y);
     }
+    // Clear cached eraser masks — they were rasterized at the editor's zoom/pan
+    // which differs from the export canvas's identity transform
+    for (const ann of annotations) {
+      if (ann.tool === 'eraser') {
+        ann.scratchMask = undefined;
+        ann.scratchOffset = undefined;
+      }
+    }
     for (const ann of annotations) {
       drawAnnotation(ctx, ann, img, imageWidth, imageHeight);
     }
