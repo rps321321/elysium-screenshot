@@ -3,7 +3,7 @@
   <h1>Elysium Screenshot</h1>
   <p><b>The absolute premium, privacy-first capture tool for your browser.</b></p>
   
-  [![Version](https://img.shields.io/badge/Version-1.0.0-6366f1.svg?style=for-the-badge)](https://github.com/rps321321/elysium-screenshot/releases)
+  [![Version](https://img.shields.io/badge/Version-1.0.1-6366f1.svg?style=for-the-badge)](https://github.com/rps321321/elysium-screenshot/releases)
   [![License](https://img.shields.io/badge/License-All_Rights_Reserved-ff4444.svg?style=for-the-badge)](LICENSE)
   [![Chrome](https://img.shields.io/badge/Platform-Chrome-white.svg?style=for-the-badge&logo=googlechrome)](https://github.com/rps321321/elysium-screenshot)
   [![Firefox](https://img.shields.io/badge/Platform-Firefox-white.svg?style=for-the-badge&logo=firefox)](https://github.com/rps321321/elysium-screenshot)
@@ -36,7 +36,7 @@
 You can install Elysium directly from our GitHub releases!
 
 1. Go to the [Releases page](https://github.com/rps321321/elysium-screenshot/releases).
-2. Download `elysium-screenshot-1.0.0-chrome.zip` or `elysium-screenshot-1.0.0-firefox.zip`.
+2. Download `elysium-screenshot-1.0.1-chrome.zip` or `elysium-screenshot-1.0.1-firefox.zip`.
 3. Extract the ZIP file into a folder.
 4. **Chrome/Edge:** 
    - Go to `chrome://extensions`
