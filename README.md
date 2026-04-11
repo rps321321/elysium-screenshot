@@ -59,27 +59,7 @@ Elysium represents the cutting edge of extension development, built on a robust 
 | **Style** | [Tailwind CSS 4](https://tailwindcss.com/) | Atomic CSS utility layer used for the glassmorphic aesthetic. |
 | **Logic** | [TypeScript](https://www.typescriptlang.org/) | Strict typings across the entire background and content scripts. |
 
-## 💻 Local Development
 
-If you want to build Elysium from the source code locally on your machine:
-
-```bash
-# 1. Clone the repository
-git clone https://github.com/rps321321/elysium-screenshot.git
-cd elysium-screenshot
-
-# 2. Install Dependencies
-npm install
-
-# 3. Start Development Server (Hot Module Reloading)
-npm run dev
-
-# 4. Build Production Bundles
-npm run build
-npm run zip
-```
-
----
 
 ## 📄 License & Rights
 
