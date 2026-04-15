@@ -87,7 +87,7 @@ function App() {
             key={mode.id}
             onClick={() => handleCapture(mode.id)}
             disabled={isCapturing}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg bg-slate-800/60 hover:bg-slate-700/80 border border-slate-700/50 hover:border-indigo-500/50 transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed text-left group"
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-slate-800/40 hover:bg-slate-700/60 border border-slate-700/40 hover:border-indigo-500/50 transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed text-left group"
           >
             <span className="text-lg w-6 text-center">{mode.icon}</span>
             <div className="flex-1 min-w-0">
@@ -105,7 +105,7 @@ function App() {
       <div className="px-3 pb-3">
         <button
           onClick={() => setShowDelay(!showDelay)}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg bg-slate-800/40 hover:bg-slate-700/60 border border-slate-700/30 hover:border-amber-500/30 transition-all duration-150 text-left"
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-slate-800/30 hover:bg-slate-700/50 border border-slate-700/30 hover:border-amber-500/30 transition-all duration-150 text-left"
         >
           <span className="text-lg w-6 text-center">⏱</span>
           <div className="flex-1">
@@ -129,7 +129,7 @@ function App() {
                 key={delay}
                 onClick={() => handleDelayCapture(delay)}
                 disabled={isCapturing}
-                className="flex-1 py-2 rounded-lg bg-amber-900/30 hover:bg-amber-800/40 border border-amber-700/30 hover:border-amber-500/50 text-amber-200 text-sm font-medium transition-all disabled:opacity-50"
+                className="flex-1 py-2 rounded-xl bg-amber-900/25 hover:bg-amber-800/35 border border-amber-700/25 hover:border-amber-500/50 text-amber-200 text-sm font-medium transition-all disabled:opacity-50"
               >
                 {delay}s
               </button>
