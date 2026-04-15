@@ -35,7 +35,7 @@ export default defineConfig({
     },
     browser_specific_settings: {
       gecko: {
-        id: 'elysium-screenshot@yourdomain.com',
+        id: 'elysium-screenshot@rps321321.github.io',
         strict_min_version: '109.0',
         data_collection_permissions: {
           required: ['none']
