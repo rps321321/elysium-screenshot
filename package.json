@@ -12,6 +12,7 @@
     "build:firefox": "wxt build -b firefox",
     "zip": "wxt zip",
     "zip:firefox": "wxt zip -b firefox",
+    "sign:firefox": "node --env-file=.env scripts/sign-firefox.mjs",
     "test": "vitest run",
     "compile": "tsc --noEmit",
     "postinstall": "wxt prepare"
@@ -32,6 +33,7 @@
     "tailwindcss": "^4.2.2",
     "typescript": "^5.9.3",
     "vitest": "^4.1.4",
+    "web-ext": "^10.1.0",
     "wxt": "^0.20.20"
   }
 }
