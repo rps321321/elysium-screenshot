@@ -34,11 +34,6 @@ export interface Annotation {
   endPoint?: Point;
   number?: number;
   blurRadius?: number;
-  bounds?: { minX: number; minY: number; maxX: number; maxY: number };
-  /** Cached eraser composite — avoids re-creating a scratch canvas every frame */
-  scratchMask?: HTMLCanvasElement | OffscreenCanvas;
-  /** Position offset for blitting the cached scratchMask onto the main canvas */
-  scratchOffset?: { x: number; y: number };
 }
 
 export interface CaptureResult {

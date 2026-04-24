@@ -28,19 +28,21 @@ export async function saveToHistory(
     mode,
   };
 
-  historyLock = historyLock.then(async () => {
+  // Chain on the previous lock but don't let one failure poison future writes —
+  // reset the lock to a resolved promise after this write finishes (success or fail).
+  const writePromise = historyLock.catch(() => {}).then(async () => {
     const history = await getHistory();
     history.unshift(item);
 
-    // Keep only the latest N items
     if (history.length > MAX_HISTORY) {
       history.length = MAX_HISTORY;
     }
 
     await browser.storage.local.set({ [STORAGE_KEY]: history });
-  }).catch(console.error);
+  });
 
-  await historyLock;
+  historyLock = writePromise.catch(() => {});
+  await writePromise;
 }
 
 async function getHistory(): Promise<ScreenshotHistoryItem[]> {

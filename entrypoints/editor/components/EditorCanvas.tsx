@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useEditorStore } from '../../../stores/editor';
-import { drawAnnotation } from '../../../lib/render';
+import { drawAnnotation, invalidateEraserMasks } from '../../../lib/render';
 import type { Annotation, Point } from '../../../lib/types';
 
 export function EditorCanvas() {
@@ -128,16 +128,8 @@ export function EditorCanvas() {
   // Invalidate cached eraser masks when zoom/pan changes — they're rasterized
   // at a specific transform and become visually corrupted at a different one.
   useEffect(() => {
-    const { annotations: anns } = useEditorStore.getState();
-    let dirty = false;
-    for (const ann of anns) {
-      if (ann.tool === 'eraser' && ann.scratchMask) {
-        ann.scratchMask = undefined;
-        ann.scratchOffset = undefined;
-        dirty = true;
-      }
-    }
-    if (dirty) requestRender();
+    invalidateEraserMasks(useEditorStore.getState().annotations);
+    requestRender();
   }, [zoom, panOffset]);
 
   function requestRender() {
@@ -175,15 +167,22 @@ export function EditorCanvas() {
     const dpr = window.devicePixelRatio || 1;
     const displayWidth = container.clientWidth;
     const displayHeight = container.clientHeight;
-
-    canvas.width = displayWidth * dpr;
-    canvas.height = displayHeight * dpr;
-
-    // CSS size stays fixed to container — no stretching
-    canvas.style.width = `${displayWidth}px`;
-    canvas.style.height = `${displayHeight}px`;
+    const pixelWidth = displayWidth * dpr;
+    const pixelHeight = displayHeight * dpr;
 
     const ctx = canvas.getContext('2d')!;
+    // Only resize the backing buffer when dimensions actually change —
+    // assigning canvas.width/height forces a GPU texture reallocation and
+    // also clears the canvas, so we skip it on no-op resizes.
+    if (canvas.width !== pixelWidth || canvas.height !== pixelHeight) {
+      canvas.width = pixelWidth;
+      canvas.height = pixelHeight;
+      canvas.style.width = `${displayWidth}px`;
+      canvas.style.height = `${displayHeight}px`;
+    } else {
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, pixelWidth, pixelHeight);
+    }
     ctx.scale(dpr, dpr);
 
     // Fill background

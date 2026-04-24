@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useEditorStore } from '../../../stores/editor';
 import { downloadScreenshot, copyToClipboard, exportAsPdf } from '../../../lib/export';
 import { getSettings, resolveFilename } from '../../../lib/settings';
-import { drawAnnotation } from '../../../lib/render';
+import { drawAnnotation, invalidateEraserMasks } from '../../../lib/render';
 import { blobToDataUrl } from '../../../lib/utils';
 import type { ExportFormat } from '../../../lib/types';
 
@@ -67,12 +67,7 @@ export function ExportDialog({ onClose }: ExportDialogProps) {
     }
     // Clear cached eraser masks — they were rasterized at the editor's zoom/pan
     // which differs from the export canvas's identity transform
-    for (const ann of annotations) {
-      if (ann.tool === 'eraser') {
-        ann.scratchMask = undefined;
-        ann.scratchOffset = undefined;
-      }
-    }
+    invalidateEraserMasks(annotations);
     for (const ann of annotations) {
       drawAnnotation(ctx, ann, img, imageWidth, imageHeight);
     }

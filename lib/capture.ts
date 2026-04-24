@@ -92,6 +92,8 @@ export async function captureFullPage(tabId: number, windowId: number): Promise<
     try { await sendToTab(tabId, { type: 'SCROLL_CAPTURE_STEP', scrollY: 0 }); } catch {}
   }
 
+  if (captures.length === 0) throw new Error('Full-page capture produced no frames');
+
   // Get actual pixel dimensions from captured images
   const firstImg = await getImageDimensions(captures[0].dataUrl);
   const totalPixelWidth = firstImg.width;

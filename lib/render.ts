@@ -8,6 +8,35 @@ import type { Annotation } from './types';
 let _scratchCanvas: HTMLCanvasElement | null = null;
 let _scratchCtx: CanvasRenderingContext2D | null = null;
 
+/**
+ * Finalized-eraser scratch mask cache, keyed by annotation identity.
+ * Lives outside the Zustand store because HTMLCanvasElement is neither
+ * JSON-serializable nor safe to pass through devtools/persist middleware.
+ * WeakMap lets masks fall out of memory automatically when the annotation
+ * is dropped (e.g. via undo).
+ */
+interface CachedMask {
+  canvas: HTMLCanvasElement;
+  offset: { x: number; y: number };
+}
+const _maskCache = new WeakMap<Annotation, CachedMask>();
+
+interface CachedBounds { minX: number; minY: number; maxX: number; maxY: number }
+const _boundsCache = new WeakMap<Annotation, CachedBounds>();
+
+/** Drop all cached eraser masks — call when zoom/pan changes or before export. */
+export function invalidateEraserMasks(annotations: readonly Annotation[]): void {
+  for (const ann of annotations) {
+    if (ann.tool === 'eraser') _maskCache.delete(ann);
+  }
+}
+
+/** Release the module-level scratch canvas. Call on editor unmount. */
+export function cleanupRenderCaches(): void {
+  _scratchCanvas = null;
+  _scratchCtx = null;
+}
+
 function getScratchCanvas(width: number, height: number): { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D } {
   if (!_scratchCanvas || !_scratchCtx) {
     _scratchCanvas = document.createElement('canvas');
@@ -66,8 +95,9 @@ export function drawAnnotation(
         // Compute bounding box of the eraser stroke to minimize scratch canvas size
         const strokeW = ann.lineWidth * 3;
         let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-        if (ann.bounds) {
-          ({ minX, minY, maxX, maxY } = ann.bounds);
+        const cachedBounds = ann.id !== 'preview' ? _boundsCache.get(ann) : undefined;
+        if (cachedBounds) {
+          ({ minX, minY, maxX, maxY } = cachedBounds);
         } else {
           for (const p of ann.points) {
             if (p.x < minX) minX = p.x;
@@ -76,7 +106,7 @@ export function drawAnnotation(
             if (p.y > maxY) maxY = p.y;
           }
           if (ann.id !== 'preview') {
-            ann.bounds = { minX, minY, maxX, maxY };
+            _boundsCache.set(ann, { minX, minY, maxX, maxY });
           }
         }
 
@@ -114,7 +144,8 @@ export function drawAnnotation(
           ctx.restore();
         } else {
           // Finalized annotation — cache the scratch canvas for reuse across frames
-          if (!ann.scratchMask) {
+          let cached = _maskCache.get(ann);
+          if (!cached) {
             const transform = ctx.getTransform();
             const scale = Math.max(Math.abs(transform.a), Math.abs(transform.d));
             const pad = strokeW * scale + 2;
@@ -143,14 +174,14 @@ export function drawAnnotation(
             sctx.globalCompositeOperation = 'source-in';
             sctx.drawImage(imageRef, 0, 0, imageWidth, imageHeight);
 
-            ann.scratchMask = scratch;
-            ann.scratchOffset = { x: bx, y: by };
+            cached = { canvas: scratch, offset: { x: bx, y: by } };
+            _maskCache.set(ann, cached);
           }
 
           // Blit the cached scratch mask — zero allocation, zero compositing
           ctx.save();
           ctx.setTransform(1, 0, 0, 1, 0, 0);
-          ctx.drawImage(ann.scratchMask, ann.scratchOffset!.x, ann.scratchOffset!.y);
+          ctx.drawImage(cached.canvas, cached.offset.x, cached.offset.y);
           ctx.restore();
         }
       } else {

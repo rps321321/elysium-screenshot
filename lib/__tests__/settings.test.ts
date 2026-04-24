@@ -67,6 +67,24 @@ describe('resolveFilename', () => {
     expect(resolveFilename('test', 'pdf', '')).toBe('test.pdf');
   });
 
+  it('prefixes Windows reserved device names to avoid producing CON.png / PRN.jpg', () => {
+    expect(resolveFilename('CON', 'png', '')).toBe('_CON.png');
+    expect(resolveFilename('prn', 'jpg', '')).toBe('_prn.jpg');
+    expect(resolveFilename('com1', 'png', '')).toBe('_com1.png');
+    expect(resolveFilename('LPT9', 'png', '')).toBe('_LPT9.png');
+  });
+
+  it('trims trailing dots and spaces (invalid on Windows)', () => {
+    expect(resolveFilename('test.', 'png', '')).toBe('test.png');
+    expect(resolveFilename('test ', 'png', '')).toBe('test.png');
+    expect(resolveFilename('test. .', 'png', '')).toBe('test.png');
+  });
+
+  it('falls back to "elysium" if sanitization empties the name', () => {
+    expect(resolveFilename('///', 'png', '')).toBe('___.png');
+    expect(resolveFilename('...', 'png', '')).toBe('elysium.png');
+  });
+
   it('handles complex URLs with subdomains', () => {
     const result = resolveFilename('{domain}', 'png', 'https://sub.example.co.uk:8080/path?q=1');
     // URL.hostname strips the port, so only the hostname is used

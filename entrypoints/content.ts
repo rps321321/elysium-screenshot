@@ -64,9 +64,15 @@ export default defineContentScript({
             let node = walker.nextNode();
             while (node) {
               const el = node as HTMLElement;
+              // Skip elements we've already backed up — otherwise a repeated
+              // HIDE_SCROLLBAR would read our injected 'absolute' as the "original"
+              // and permanently break the page layout on restore.
+              if (el.dataset.elysiumPosBackup !== undefined) {
+                node = walker.nextNode();
+                continue;
+              }
               const computed = window.getComputedStyle(el);
               if (computed.position === 'fixed' || computed.position === 'sticky') {
-                // Check if position was set via inline style or via CSS class/sheet
                 const inlinePos = el.style.position;
                 if (inlinePos) {
                   // The element had an explicit inline style — preserve its exact value

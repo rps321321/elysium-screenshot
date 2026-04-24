@@ -5,6 +5,8 @@ import { Toolbar } from './components/Toolbar';
 import { ExportDialog } from './components/ExportDialog';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { getSettings } from '../../lib/settings';
+import { copyToClipboard } from '../../lib/export';
+import { cleanupRenderCaches } from '../../lib/render';
 import type { CaptureResult } from '../../lib/types';
 
 export default function EditorApp() {
@@ -22,6 +24,7 @@ export default function EditorApp() {
         URL.revokeObjectURL(blobUrlRef.current);
         blobUrlRef.current = null;
       }
+      cleanupRenderCaches();
     };
   }, []);
 
@@ -58,10 +61,7 @@ export default function EditorApp() {
         try {
           const settings = await getSettings();
           if (settings.autoCopyToClipboard) {
-            const resp = await fetch(capture.dataUrl);
-            const blob = await resp.blob();
-            const pngBlob = blob.type === 'image/png' ? blob : await convertToPng(blob);
-            await navigator.clipboard.write([new ClipboardItem({ 'image/png': pngBlob })])
+            await copyToClipboard(capture.dataUrl);
             setCopiedToast(true);
             setTimeout(() => setCopiedToast(false), 2000);
           }
@@ -70,7 +70,7 @@ export default function EditorApp() {
           if (settings.defaultFormat) {
             useEditorStore.getState().setExportFormat(settings.defaultFormat);
           }
-          if (settings.defaultQuality) {
+          if (settings.defaultQuality != null) {
             useEditorStore.getState().setExportQuality(settings.defaultQuality);
           }
         } catch (err) {
@@ -80,18 +80,6 @@ export default function EditorApp() {
     }
     loadCapture();
   }, [setImage, setCaptureUrl]);
-
-  async function convertToPng(blob: Blob): Promise<Blob> {
-    const bitmap = await createImageBitmap(blob);
-    const canvas = document.createElement('canvas');
-    canvas.width = bitmap.width;
-    canvas.height = bitmap.height;
-    canvas.getContext('2d')!.drawImage(bitmap, 0, 0);
-    bitmap.close();
-    return new Promise((resolve, reject) =>
-      canvas.toBlob((b) => b ? resolve(b) : reject(new Error('PNG conversion failed')), 'image/png'),
-    );
-  }
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {

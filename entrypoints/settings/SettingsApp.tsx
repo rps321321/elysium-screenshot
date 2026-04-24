@@ -182,7 +182,17 @@ export default function SettingsApp() {
               Need to change these? Go to your browser's extensions page.
             </p>
             <button
-              onClick={() => browser.tabs.create({ url: 'chrome://extensions/shortcuts' })}
+              onClick={() => {
+                // Firefox exposes shortcuts at about:addons → Manage Extension Shortcuts;
+                // it disallows programmatic navigation to `chrome://` or `about:` URLs,
+                // so fall back to a user-facing instruction in that case.
+                const isFirefox = navigator.userAgent.includes('Firefox');
+                if (isFirefox) {
+                  alert('In Firefox, open about:addons, click the gear icon, then "Manage Extension Shortcuts".');
+                  return;
+                }
+                browser.tabs.create({ url: 'chrome://extensions/shortcuts' });
+              }}
               className="text-xs font-medium text-white bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg border border-white/5 transition-colors"
             >
               Configure Shortcuts ↗

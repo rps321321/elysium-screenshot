@@ -2,7 +2,7 @@ import { captureVisibleTab, captureFullPage } from '../lib/capture';
 import { getSettings, resolveFilename } from '../lib/settings';
 import { saveToHistory } from '../lib/history';
 import { blobToDataUrl, sendToTab, sleep } from '../lib/utils';
-import { storeBlob } from '../lib/storage/db';
+import { storeBlob, pruneOrphanBlobs } from '../lib/storage/db';
 import type { CaptureResult, CaptureMode } from '../lib/types';
 
 export default defineBackground(() => {
@@ -26,14 +26,14 @@ export default defineBackground(() => {
     // Try current window first
     let tabs = await browser.tabs.query({ active: true, lastFocusedWindow: true });
     for (const tab of tabs) {
-      if (tab.id && tab.url && !tab.url.startsWith('chrome://') && !tab.url.startsWith('chrome-extension://') && !tab.url.startsWith('about')) {
+      if (tab.id && tab.url && !tab.url.startsWith('chrome://') && !tab.url.startsWith('chrome-extension://') && !tab.url.startsWith('about:')) {
         return tab;
       }
     }
     // Fallback: all windows
     tabs = await browser.tabs.query({ active: true });
     for (const tab of tabs) {
-      if (tab.id && tab.url && !tab.url.startsWith('chrome://') && !tab.url.startsWith('chrome-extension://') && !tab.url.startsWith('about')) {
+      if (tab.id && tab.url && !tab.url.startsWith('chrome://') && !tab.url.startsWith('chrome-extension://') && !tab.url.startsWith('about:')) {
         return tab;
       }
     }
@@ -65,22 +65,24 @@ export default defineBackground(() => {
 
     // Auto-save to downloads
     if (settings.afterCapture === 'save' || settings.afterCapture === 'both') {
+      let downloadUrl: string | null = null;
       try {
         const filename = resolveFilename(settings.filenamePattern, settings.defaultFormat, capture.url);
-        let downloadUrl = capture.dataUrl;
+        let downloadBlob = await (await fetch(capture.dataUrl)).blob();
 
         // Convert format if not PNG
         if (settings.defaultFormat !== 'png') {
-          const blob = await (await fetch(capture.dataUrl)).blob();
-          const bitmap = await createImageBitmap(blob);
+          const bitmap = await createImageBitmap(downloadBlob);
           const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
           canvas.getContext('2d')!.drawImage(bitmap, 0, 0);
           bitmap.close();
           const mime = settings.defaultFormat === 'jpg' ? 'image/jpeg' : 'image/webp';
-          const converted = await canvas.convertToBlob({ type: mime, quality: settings.defaultQuality });
-          downloadUrl = await blobToDataUrl(converted);
+          downloadBlob = await canvas.convertToBlob({ type: mime, quality: settings.defaultQuality });
         }
 
+        // Use a blob URL — avoids serializing a multi-MB base64 string across the
+        // service-worker boundary for large captures.
+        downloadUrl = URL.createObjectURL(downloadBlob);
         await browser.downloads.download({ url: downloadUrl, filename, saveAs: false });
 
         // Show notification
@@ -94,6 +96,10 @@ export default defineBackground(() => {
         } catch {}
       } catch (err) {
         console.error('Elysium: auto-save failed', err);
+      } finally {
+        if (downloadUrl) {
+          setTimeout(() => URL.revokeObjectURL(downloadUrl!), 60_000);
+        }
       }
     }
 
@@ -182,7 +188,7 @@ export default defineBackground(() => {
     try { await sendToTab(senderTab.id!, { type: 'HIDE_SCROLLBAR' }); } catch {}
     await sleep(100);
 
-    let screenshotUrl: string;
+    let screenshotUrl = '';
     try {
       screenshotUrl = await browser.tabs.captureVisibleTab(senderTab.windowId!, {
         format: 'png', quality: 100,
@@ -191,6 +197,7 @@ export default defineBackground(() => {
       try { await sendToTab(senderTab.id!, { type: 'SHOW_SCROLLBAR' }); } catch {}
     }
 
+    if (!screenshotUrl) throw new Error('Capture produced no image');
     const blob = await (await fetch(screenshotUrl)).blob();
     const bitmap = await createImageBitmap(blob);
     const sx = Math.round(rect.x * dpr);
@@ -214,6 +221,10 @@ export default defineBackground(() => {
   // ─── Message handler ───
 
   browser.runtime.onMessage.addListener((message: any, sender, sendResponse) => {
+    // Only accept messages from this extension's own contexts (popup, content scripts, editor).
+    // Rejects externally_connectable senders and cross-extension messages.
+    if (sender.id !== browser.runtime.id) return false;
+
     (async () => {
       // Wait for popup to close
       await sleep(100);
@@ -246,7 +257,20 @@ export default defineBackground(() => {
 
   // ─── Context Menu ───
 
+  async function cleanupOrphanBlobs() {
+    try {
+      const pending = await browser.storage.local.get('elysium_pending_capture');
+      const activeId = (pending.elysium_pending_capture as { blobId?: string } | undefined)?.blobId;
+      await pruneOrphanBlobs(activeId ? [activeId] : []);
+    } catch (err) {
+      console.warn('Elysium: orphan blob cleanup failed', err);
+    }
+  }
+
+  browser.runtime.onStartup?.addListener(cleanupOrphanBlobs);
+
   browser.runtime.onInstalled.addListener(async () => {
+    await cleanupOrphanBlobs();
     await browser.contextMenus?.removeAll();
     browser.contextMenus?.create({ id: 'elysium-visible', title: 'Capture visible area', contexts: ['page'] });
     browser.contextMenus?.create({ id: 'elysium-fullpage', title: 'Capture full page', contexts: ['page'] });

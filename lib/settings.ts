@@ -30,7 +30,9 @@ export async function updateSettings(partial: Partial<Settings>): Promise<Settin
 }
 
 /** Characters invalid in Windows/Mac/Linux filenames */
-const INVALID_FILENAME_CHARS = /[<>:"|?*\\/]/g;
+const INVALID_FILENAME_CHARS = /[<>:"|?*\\/\x00-\x1f]/g;
+/** Windows reserved device names — case-insensitive, regardless of extension */
+const WINDOWS_RESERVED = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/i;
 
 export function resolveFilename(
   pattern: string,
@@ -53,6 +55,10 @@ export function resolveFilename(
     .replace('{date}', date)
     .replace('{time}', time);
 
-  // Sanitize: strip any characters invalid for filenames
-  return resolved.replace(INVALID_FILENAME_CHARS, '_') + '.' + format;
+  // Sanitize: strip invalid characters, trim trailing dots/spaces (Windows trims them),
+  // and prefix Windows reserved device names so we never produce e.g. "CON.png".
+  let name = resolved.replace(INVALID_FILENAME_CHARS, '_').replace(/[. ]+$/, '');
+  if (!name) name = 'elysium';
+  if (WINDOWS_RESERVED.test(name)) name = `_${name}`;
+  return `${name}.${format}`;
 }
